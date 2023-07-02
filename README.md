@@ -7,8 +7,12 @@ Summarize Google Meet calls using GPT-3.5.
 1. User enables [transcripts](https://support.google.com/meet/answer/12849897?hl=en) during a Google Meet call.
 2. When meeting ends, Google Meet will upload a transcript to the user's Google Drive.
 3. Google Drive sends a webhook notifying us that a new file was created.
-4. We download the transcript from Google Drive and send it to GPT-3 to summarize.
+4. We download the transcript from Google Drive and send it to OpenAI to summarize.
 5. We send the summary to the meeting attendees via email.
+
+>This project uses OpenAI's [gpt-3.5-turbo-16k](https://platform.openai.com/docs/models/gpt-3-5) model.
+
+See [demo](#demo) below for an example.
 
 ## Build and deploy
 
@@ -141,4 +145,48 @@ SQS event for worker to summarize the meeting transcript:
 ```bash
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
   -d '{"Records":[{"messageId":"xxxx-xx-xx-xx-xxxx","body":"{\"title\":\"Example Meeting (2023-05-26 12:38 GMT-4) - Transcript\",\"id\":\"change-me\",\"link\":\"https://docs.google.com/document/d/change-me/edit?usp=drivesdk\",\"owner_email\":\"change-me@example.com\"}","attributes":{"ApproximateReceiveCount":"1","AWSTraceHeader":"Root=1-6470f9b0-xxxx;Parent=xxxx;Sampled=0;Lineage=85108a56:0","SentTimestamp":"1685125554295","SenderId":"change-me:meeting-notes-prod-api","ApproximateFirstReceiveTimestamp":"1685125554296"},"messageAttributes":{},"md5OfBody":"11268099d001110f04757778362ddb11","eventSource":"aws:sqs","eventSourceARN":"arn:aws:sqs:us-east-1:change-me:meeting-notes-prod-prod-queue","awsRegion":"us-east-1"}]}'
+```
+
+## Demo
+
+Example email sent to meeting attendees:
+
+```text
+Git Bootcamp (2023-05-29 14:03 GMT-4) - Transcript
+
+Attendees:
+Gilfoyle, Dinesh, Richard Hendricks, Jared Dunn, Monica Hall, Erlich Bachman 
+
+Summary:
+In the workshop, Gilfoyle provided an in-depth explanation of Git, focusing on the differences 
+between merging and rebasing. He emphasized the safety of using git fetch for downloading updates 
+from the remote repository and used visual aids to illustrate the differences between merging and rebasing. 
+He advised against squashing commits from develop to master to avoid confusion and duplication. 
+He also stressed the importance of updating branches and creating feature branches off of develop, 
+recommending the rule of two for branching off feature branches and merging changes into develop in 
+small increments. He introduced the concept of WIP or draft PRs for ongoing work and the need for a clear 
+team workflow. He also touched on the interactive rebase command and its options, and concluded with a 
+brief discussion on git log and its search options.
+
+Key Decisions:
+- Git fetch should be used for safely downloading updates from the remote repository.
+- Squashing commits from develop to master should be avoided to prevent confusion and duplication.
+- The rule of two should be followed for branching off feature branches and changes should be merged into develop in small pieces.
+- A clear workflow should be established for the team, including the use of WIP or draft PRs for ongoing work.
+
+Next Steps:
+- Team members should familiarize themselves with the differences between merging and rebasing.
+- Team members should practice using git fetch for downloading updates.
+- Team members should avoid squashing commits from develop to master.
+- Team members should follow the rule of two for branching off feature branches and merge changes into develop in small increments.
+- Team members should use WIP or draft PRs for ongoing work.
+- Team members should establish a clear workflow.
+- Team members should familiarize themselves with the interactive rebase command and its options.
+- Team members should learn how to use git log and its search options.
+
+Full transcript:
+https://docs.google.com/document/d/xxxxxx/edit?usp=drivesdk
+
+---
+Sent by Meeting Notes AI 🤖
 ```
