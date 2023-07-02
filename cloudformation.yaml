@@ -1,0 +1,279 @@
+Description: >
+    Generate meeting notes from Google Meet calls using OpenAI's GPT-3.
+
+#
+# PARAMETERS
+#
+Parameters:
+    Architecture:
+      Description: Should containers use ARM64 or X86_64?
+      Type: String
+      Default: X86_64
+      AllowedValues:
+        - X86_64
+        - ARM64
+    ApiContainerImageUri:
+      Description: API container image URI
+      Type: String
+    ApiContainerImageTag:
+      Description: API container image tag
+      Type: String
+      Default: latest
+    OpenaiApiKey:
+      Description: OpenAI API Key
+      Type: String
+      NoEcho: true
+    OpenaiOrgId:
+      Description: OpenAI Organization ID
+      Type: String
+      NoEcho: true
+    MailgunApiKey:
+      Description: Mailgun API Key
+      Type: String
+      NoEcho: true
+    MailgunDomain:
+      Description: Mailgun Domain
+      Type: String
+    S3Bucket:
+      Description: S3 bucket name
+      Type: String
+    StageName:
+      Description: "Environment name"
+      Type: String
+      Default: "dev"
+      AllowedValues:
+        - dev
+        - prod
+    ServiceName:
+      Description: "Service name for billing tag"
+      Type: String
+      Default: "meeting-notes"
+    WorkspaceEmails:
+      Description: "Comma-separated list of Google Workspace emails"
+      Type: String
+    GoogleSiteVerification:
+      Description: "Google Site Verification"
+      Type: String
+
+#
+# CONDITIONS
+#
+Conditions:
+  CreateProdResources: !Equals 
+    - !Ref StageName
+    - prod
+  UseArm64Architecture: !Equals
+    - !Ref Architecture
+    - ARM64
+
+#
+# RESOURCES
+#
+Resources:
+
+  # SQS Queue
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-${StageName}-queue
+      VisibilityTimeout: 600 # must be the same or higher than the lambda worker timeout
+      Tags:
+        - Key: service
+          Value: !Ref ServiceName
+        - Key: Environment
+          Value: !Ref StageName
+  
+  # Lambda Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      RoleName: !Sub ${AWS::StackName}-lambda-exec-role-${AWS::Region}
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Action": "sts:AssumeRole",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                }
+            }]
+        }
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-lambda-exec-policy-${AWS::Region}
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetRepositoryPolicy
+                  - ecr:BatchGetImage
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeInstances
+                  - ec2:AttachNetworkInterface
+              - Effect: Allow
+                Resource:
+                  - !Sub arn:aws:s3:::${S3Bucket}/datalake/meeting-notes/*
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub arn:aws:lambda:*:*:function:${AWS::StackName}-api
+                  - !Sub arn:aws:lambda:*:*:function:${AWS::StackName}-worker
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  - !GetAtt Queue.Arn
+
+  # Lambda Worker Function
+  WorkerLambdaFunction:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - LambdaExecutionRole
+    Properties:
+      Description: Worker for Autohost Meeting Notes
+      FunctionName: !Sub ${AWS::StackName}-worker
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - !If
+          - UseArm64Architecture
+          - arm64
+          - x86_64
+      MemorySize: 1024
+      PackageType: Image
+      ReservedConcurrentExecutions: 1
+      Code:
+        ImageUri: !Join [ ":", [ !Ref ApiContainerImageUri, !Ref ApiContainerImageTag ] ]
+      Timeout: 600
+      Environment:
+        Variables:
+          WORKSPACE_EMAILS: !Ref WorkspaceEmails
+          LAMBDA_FUNCTION_NAME: !Sub ${AWS::StackName}-worker
+          OPENAI_API_KEY: !Ref OpenaiApiKey
+          OPENAI_ORG_ID: !Ref OpenaiOrgId
+          MAILGUN_API_KEY: !Ref MailgunApiKey
+          MAILGUN_DOMAIN: !Ref MailgunDomain
+          S3_BUCKET: !Ref S3Bucket
+          PORT: 8080
+      Tags:
+        - Key: service
+          Value: !Ref ServiceName
+        - Key: Environment
+          Value: !Ref StageName
+
+  # Lambda API Function
+  ApiLambdaFunction:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - LambdaExecutionRole
+    Properties:
+      Description: API backend for Autohost Meeting Notes
+      FunctionName: !Sub ${AWS::StackName}-api
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - !If
+          - UseArm64Architecture
+          - arm64
+          - x86_64
+      MemorySize: 512
+      PackageType: Image
+      ReservedConcurrentExecutions: 15
+      Code:
+        ImageUri: !Join [ ":", [ !Ref ApiContainerImageUri, !Ref ApiContainerImageTag] ]
+      Timeout: 30
+      Environment:
+        Variables:
+          GOOGLE_SITE_VERIFICATION: !Ref GoogleSiteVerification
+          LAMBDA_FUNCTION_NAME: !Sub ${AWS::StackName}-worker
+          S3_BUCKET: !Ref S3Bucket
+          SQS_QUEUE_URL: !GetAtt Queue.QueueUrl
+          PORT: 8080
+      Tags:
+        - Key: service
+          Value: !Ref ServiceName
+        - Key: Environment
+          Value: !Ref StageName
+    
+  # Lambda API Function URL
+  ApiLambdaUrl:
+    Type: AWS::Lambda::Url
+    DependsOn:
+      - ApiLambdaFunction
+    Properties:
+      TargetFunctionArn: !GetAtt ApiLambdaFunction.Arn
+      AuthType: NONE
+  
+  # Lambda URL Permission
+  ApiLambdaUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiLambdaFunction
+      Principal: '*'
+      Action: 'lambda:InvokeFunctionUrl'
+      FunctionUrlAuthType: NONE
+
+  # Lambda worker SQS event source mapping
+  WorkerLambdaEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    DependsOn:
+    - Queue
+    - WorkerLambdaFunction
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn: !GetAtt Queue.Arn
+      FunctionName: !Ref WorkerLambdaFunction
+
+  # Scheduled execution rule to renew webhook subscriptions
+  ScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Renew Google Drive Webhook for Meeting Notes"
+      ScheduleExpression: "rate(1 hour)"
+      State: "ENABLED"
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - "WorkerLambdaFunction"
+              - "Arn"
+          Id: "TargetFunctionV1"
+          Input: !Join
+            - ""
+            - - '{"is_scheduled": true, "webhook_url": "'
+              - !GetAtt ApiLambdaUrl.FunctionUrl
+              - '"}'
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref "WorkerLambdaFunction"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn:
+        Fn::GetAtt:
+          - "ScheduledRule"
+          - "Arn"
+
+#
+# OUTPUT
+#
+Outputs:
+  ApiUrl:
+    Description: API URL
+    Value: !GetAtt ApiLambdaUrl.FunctionUrl
+    Export:
+      Name: !Sub ${AWS::StackName}-ApiUrl

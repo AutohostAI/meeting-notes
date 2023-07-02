@@ -1,0 +1,42 @@
+[
+  {
+    "ParameterKey": "Architecture",
+    "ParameterValue": "ARM64"
+  },
+  {
+    "ParameterKey": "ApiContainerImageUri",
+    "ParameterValue": "meeting-notes"
+  },
+  {
+    "ParameterKey": "ApiContainerImageTag",
+    "ParameterValue": "latest"
+  },
+  {
+    "ParameterKey": "OpenaiApiKey",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "OpenaiOrgId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "StageName",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "MailgunApiKey",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "MailgunDomain",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "S3Bucket",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "WorkspaceEmails",
+    "ParameterValue": ""
+  }
+]
