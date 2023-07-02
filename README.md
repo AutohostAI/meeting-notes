@@ -14,6 +14,14 @@ Summarize Google Meet calls using GPT-3.5.
 
 See [demo](#demo) below for an example.
 
+## Prerequisites
+
+- Open AI account (to use GPT-3.5)
+- AWS account (to deploy the API and worker)
+- Google Workspace account (to use Google Meet)
+- Google Cloud account (for Google Drive API)
+- Mailgun account (to send emails)
+
 ## Build and deploy
 
 Steps:
