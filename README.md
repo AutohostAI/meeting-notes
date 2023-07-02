@@ -122,7 +122,6 @@ AWS_SECRET_ACCESS_KEY=xxx
 MAILGUN_API_KEY=xxx
 MAILGUN_DOMAIN=xxx.xyz
 S3_BUCKET=xxx
-LAMBDA_FUNCTION_NAME=meeting-notes-prod-api
 ````
 
 Build and run the image:

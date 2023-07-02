@@ -59,9 +59,6 @@ Parameters:
 # CONDITIONS
 #
 Conditions:
-  CreateProdResources: !Equals 
-    - !Ref StageName
-    - prod
   UseArm64Architecture: !Equals
     - !Ref Architecture
     - ARM64
@@ -163,12 +160,12 @@ Resources:
       Environment:
         Variables:
           WORKSPACE_EMAILS: !Ref WorkspaceEmails
-          LAMBDA_FUNCTION_NAME: !Sub ${AWS::StackName}-worker
           OPENAI_API_KEY: !Ref OpenaiApiKey
           OPENAI_ORG_ID: !Ref OpenaiOrgId
           MAILGUN_API_KEY: !Ref MailgunApiKey
           MAILGUN_DOMAIN: !Ref MailgunDomain
           S3_BUCKET: !Ref S3Bucket
+          SQS_QUEUE_URL: !GetAtt Queue.QueueUrl
           PORT: 8080
       Tags:
         - Key: service
@@ -199,7 +196,6 @@ Resources:
       Environment:
         Variables:
           GOOGLE_SITE_VERIFICATION: !Ref GoogleSiteVerification
-          LAMBDA_FUNCTION_NAME: !Sub ${AWS::StackName}-worker
           S3_BUCKET: !Ref S3Bucket
           SQS_QUEUE_URL: !GetAtt Queue.QueueUrl
           PORT: 8080
