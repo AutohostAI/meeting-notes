@@ -2,7 +2,12 @@
 
 """
 
-Process Google Drive file changes webhook and summarize contents of Google Docs that match a certain pattern using OpenAI
+Main handler for the serverless application.
+
+This handler is invoked by:
+- Lambda URL endpoint (to queue Google Drive webhook events)
+- Scheduled events (to queue Google Drive webhook subscription renewal task)
+- SQS events (to process queued tasks, such as Google Drive webhook events)
 
 """
 
@@ -18,10 +23,6 @@ from libs.gdrive import get_drive_change_event, renew_drive_webhook_subscription
 from libs.sqs import queue_message
 
 
-credentials_path = "credentials.json"
-SCOPES = [
-    'https://www.googleapis.com/auth/drive.readonly',
-]
 HTML = f"""<HTML>
 <HEAD>
 <TITLE>Meeting Notes</TITLE>

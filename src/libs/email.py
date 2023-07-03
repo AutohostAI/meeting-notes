@@ -3,6 +3,14 @@ import requests
 
 
 def send_email(to, subject, message):
+    """
+    Sends an email using Mailgun
+
+    :param to: Email address to send the email to
+    :param subject: Subject of the email
+    :param message: Message of the email (plain text)
+    :return: String "sent"
+    """
     data = {
         "from": f"Meeting Notes <no-reply@{os.environ.get('MAILGUN_DOMAIN', '')}>",
         "to": to,

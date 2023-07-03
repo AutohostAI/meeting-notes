@@ -15,6 +15,14 @@ SCOPES = [
 
 
 def get_drive_change_event(user_email, change_id):
+    """
+    Gets the change event for a user
+
+    :param user_email: Email of the user to get the change event for
+    :param change_id: ID of the change event to get
+    :return: Change event object
+    """
+
     # Load the credentials
     creds = service_account.Credentials.from_service_account_file(
         credentials_path,
@@ -55,6 +63,13 @@ def get_drive_change_event(user_email, change_id):
 
 
 def renew_drive_webhook_for_user(user_email, webhook_url=None):
+    """
+    Renews the webhook subscription for a user
+
+    :param user_email: Email of the user to renew the webhook for
+    :param webhook_url: Webhook URL to use
+    :return: None
+    """
     if webhook_url is not None:
         os.environ['WEBHOOK_URL'] = webhook_url
     if 'WEBHOOK_URL' not in os.environ:
@@ -87,6 +102,12 @@ def renew_drive_webhook_for_user(user_email, webhook_url=None):
 
 
 def renew_drive_webhook_subscriptions(event):
+    """
+    Renews the webhook subscriptions for all users in WORKSPACE_EMAILS
+
+    :param event: Scheduled event with `webhook_url` in the payload
+    :return: None
+    """
     users = []
     if os.environ.get('WORKSPACE_EMAILS', None) is not None:
         users = os.environ['WORKSPACE_EMAILS'].split(',')
@@ -100,11 +121,12 @@ def renew_drive_webhook_subscriptions(event):
 
 
 def export_text(file_id, user_email):
-    """Download a Document file in PDF format.
-    Args:
-        file_id : file ID of any workspace document format file
-        user_email : email address of user
-    Returns : Text of file
+    """
+    Exports a Google Doc as plain text
+
+    :param file_id: Google Doc ID
+    :param user_email: User email to delegate the credentials to
+    :return: Plain text
     """
     creds = service_account.Credentials.from_service_account_file(
         credentials_path,
