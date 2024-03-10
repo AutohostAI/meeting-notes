@@ -14,13 +14,17 @@ This handler is invoked by:
 import os
 import json
 import traceback
-import openai
+from openai import OpenAI
 from urllib.parse import unquote_plus
 from libs.s3 import upload_to_s3, get_from_s3
 from libs.email import send_email
 from libs.llm import condense_transcript, summarize_long_text_in_chunks
 from libs.gdrive import get_drive_change_event, renew_drive_webhook_subscriptions, export_text, get_file_emails
 from libs.sqs import queue_message
+
+
+# Create an instance of the OpenAI class
+client = OpenAI()
 
 
 HTML = f"""<HTML>
@@ -233,7 +237,7 @@ Next Steps:
 [Next steps for the meeting participants using 1-10 bullet points]"""
 
         # Make the API call to OpenAI
-        summary_response = openai.ChatCompletion.create(
+        summary_response = client.chat.completions.create(
             model="gpt-4-turbo-preview",
             temperature=0,
             messages=[

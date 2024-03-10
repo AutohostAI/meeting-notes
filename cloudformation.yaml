@@ -195,6 +195,8 @@ Resources:
       Timeout: 30
       Environment:
         Variables:
+          OPENAI_API_KEY: !Ref OpenaiApiKey
+          OPENAI_ORG_ID: !Ref OpenaiOrgId
           GOOGLE_SITE_VERIFICATION: !Ref GoogleSiteVerification
           S3_BUCKET: !Ref S3Bucket
           SQS_QUEUE_URL: !GetAtt Queue.QueueUrl

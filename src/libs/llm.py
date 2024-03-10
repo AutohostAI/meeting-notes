@@ -1,9 +1,9 @@
-import os
-import openai
+from openai import OpenAI
 from .tokens import num_tokens_from_string
 
-openai.organization = os.getenv("OPENAI_ORG_ID")
-openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Create an instance of the OpenAI class
+client = OpenAI()
 
 
 def condense_transcript(transcript, attendee_list):
@@ -55,9 +55,8 @@ def summarize_text(text: str, max_tokens: int = 4000) -> str:
         "Always include the speaker's name and a colon before the summary of what was said. Use ONLY one short sentence to summarize each speaker if possible.",
         "Remember to keep the summary short and concise while retaining information about discussion topics, key descisions and action items.",
     ])
-    openai.organization = os.getenv("OPENAI_ORG_ID")
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    summary_response = openai.ChatCompletion.create(
+
+    summary_response = client.chat.completions.create(
         model="gpt-4-turbo-preview",
         temperature=0,
         max_tokens=max_tokens or 2000,
