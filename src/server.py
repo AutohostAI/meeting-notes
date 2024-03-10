@@ -224,7 +224,7 @@ This transcript was computer generated and might contain errors.
 Use the following format for your response:
 
 Summary:
-[Summary of the meeting using 1-2 paragraphs]
+[Summary of the meeting using 1-4 paragraphs]
 
 Key Decisions:
 [Key decisions made during the meeting using 1-4 bullet points]
@@ -234,7 +234,7 @@ Next Steps:
 
         # Make the API call to OpenAI
         summary_response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4-turbo-preview",
             temperature=0,
             messages=[
                 {"role": "system", "content": system},
@@ -273,6 +273,7 @@ Next Steps:
         "subject": f"Meeting notes: {event['body']['title']}",
         "text": message,
     }))
+    print(f"Sent email to {participant_email} for document ID {file_id}")
 
     # Return the message
     return message

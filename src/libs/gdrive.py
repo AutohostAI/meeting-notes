@@ -1,5 +1,6 @@
 import os
 import io
+from datetime import datetime
 from urllib.parse import quote_plus
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -88,17 +89,23 @@ def renew_drive_webhook_for_user(user_email, webhook_url=None):
     # Get the page token
     response = service.changes().getStartPageToken().execute()
     # Register the webhook
-    response = service.changes().watch(
-        pageToken=response.get('startPageToken'),
-        body={
-            'id': f'autohost-meeting-transcripts-{user_email.split("@")[0].replace(".", "_")}',
-            'type': 'web_hook',
-            'address': os.environ['WEBHOOK_URL'],
-            'token': quote_plus(user_email)
-        }
-    ).execute()
-    print(f"Registered Google Drive webhook for user {user_email}: {response}")
-    return response
+    try:
+        unix_milliseconds_hour_from_now = int((datetime.now().timestamp() + 3600) * 1000)
+        response = service.changes().watch(
+            pageToken=response.get('startPageToken'),
+            body={
+                'id': f'{unix_milliseconds_hour_from_now}-meeting-transcripts-{user_email.split("@")[0].replace(".", "_")}',
+                'type': 'web_hook',
+                'address': os.environ['WEBHOOK_URL'],
+                'token': quote_plus(user_email),
+                'expiration': unix_milliseconds_hour_from_now,
+            }
+        ).execute()
+        print(f"Registered Google Drive webhook for user {user_email}: {response}")
+        return response
+    except HttpError as error:
+        print(f"Error registering Google Drive webhook for user {user_email}: {error}")
+        return None
 
 
 def renew_drive_webhook_subscriptions(event):
