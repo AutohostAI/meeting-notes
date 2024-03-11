@@ -65,7 +65,7 @@ def summarize_text(text: str, max_tokens: int = 4000) -> str:
             {"role": "user", "content": f'"""{text}"""\n\nSummarize the transcript above.'},
         ]
     )
-    summary = summary_response["choices"][0]["message"]["content"]
+    summary = summary_response.choices[0].message.content
     # print(summary)
     return summary
 

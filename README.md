@@ -48,28 +48,28 @@ The Docker build specification will copy the `credentials.json` file to the cont
 > 
 > Replace `xxx.dkr.ecr.us-east-1.amazonaws.com` with your container registry.
 
+Log into AWS ECR:
+
+```bash
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 261082948988.dkr.ecr.us-east-1.amazonaws.com
+```
+
 Build the Docker image:
 
 ```bash
 docker build -t meeting-notes .
 ```
 
-Log into AWS ECR:
-
-```bash
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin xxx.dkr.ecr.us-east-1.amazonaws.com
-```
-
 Tag the image:
 
 ```bash
-docker tag meeting-notes:latest xxx.dkr.ecr.us-east-1.amazonaws.com/meeting-notes:latest
+docker tag meeting-notes:latest 261082948988.dkr.ecr.us-east-1.amazonaws.com/autohost-meeting-notes:latest
 ```
 
 Push the image to ECR:
 
 ```bash
-docker push xxx.dkr.ecr.us-east-1.amazonaws.com/meeting-notes:latest
+docker push 261082948988.dkr.ecr.us-east-1.amazonaws.com/autohost-meeting-notes:latest
 ```
 
 ### Deploying the API and worker
@@ -108,7 +108,7 @@ Update CloudFormation template using `aws-cli`:
 
 ```bash
 aws cloudformation update-stack \
-    --stack-name meeting-notes-prod \
+    --stack-name autohost-meeting-notes-prod \
     --capabilities CAPABILITY_NAMED_IAM \
     --tags Key=service,Value=meeting-notes Key=Environment,Value=prod \
     --parameters file://$(pwd)/stack-params-prod.json \
@@ -151,7 +151,7 @@ SQS event for worker to summarize the meeting transcript:
 
 ```bash
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
-  -d '{"Records":[{"messageId":"xxxx-xx-xx-xx-xxxx","body":"{\"title\":\"Example Meeting (2023-05-26 12:38 GMT-4) - Transcript\",\"id\":\"change-me\",\"link\":\"https://docs.google.com/document/d/change-me/edit?usp=drivesdk\",\"owner_email\":\"change-me@example.com\"}","attributes":{"ApproximateReceiveCount":"1","AWSTraceHeader":"Root=1-6470f9b0-xxxx;Parent=xxxx;Sampled=0;Lineage=85108a56:0","SentTimestamp":"1685125554295","SenderId":"change-me:meeting-notes-prod-api","ApproximateFirstReceiveTimestamp":"1685125554296"},"messageAttributes":{},"md5OfBody":"11268099d001110f04757778362ddb11","eventSource":"aws:sqs","eventSourceARN":"arn:aws:sqs:us-east-1:change-me:meeting-notes-prod-prod-queue","awsRegion":"us-east-1"}]}'
+  -d '{"Records":[{"messageId":"1JlgPkv5j_N9ul39dWRV-cVcVPIB-lfUK9OcKMALhxgg","body":"{\"title\":\"Example Meeting (2023-05-26 12:38 GMT-4) - Transcript\",\"id\":\"1JlgPkv5j_N9ul39dWRV-cVcVPIB-lfUK9OcKMALhxgg\",\"link\":\"https://docs.google.com/document/d/change-me/edit?usp=drivesdk\",\"owner_email\":\"roy@autohost.ai\"}","attributes":{"ApproximateReceiveCount":"1","AWSTraceHeader":"Root=1-6470f9b0-xxxx;Parent=xxxx;Sampled=0;Lineage=85108a56:0","SentTimestamp":"1685125554295","SenderId":"change-me:meeting-notes-prod-api","ApproximateFirstReceiveTimestamp":"1685125554296"},"messageAttributes":{},"md5OfBody":"11268099d001110f04757778362ddb11","eventSource":"aws:sqs","eventSourceARN":"arn:aws:sqs:us-east-1:change-me:meeting-notes-prod-prod-queue","awsRegion":"us-east-1"}]}'
 ```
 
 ## Demo

@@ -246,7 +246,7 @@ Next Steps:
             ]
         )
 
-        summary = summary_response["choices"][0]["message"]["content"]
+        summary = summary_response.choices[0].message.content
         # print(summary)
 
         # Save the summary to S3
