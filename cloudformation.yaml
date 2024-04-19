@@ -27,6 +27,14 @@ Parameters:
       Description: OpenAI Organization ID
       Type: String
       NoEcho: true
+    LangSmithApiKey:
+      Description: LangSmith API Key
+      Type: String
+      NoEcho: true
+    PromptHubApiKey:
+      Description: PromptHub API Key
+      Type: String
+      NoEcho: true
     MailgunApiKey:
       Description: Mailgun API Key
       Type: String
@@ -159,6 +167,10 @@ Resources:
       Timeout: 600
       Environment:
         Variables:
+          LANGCHAIN_TRACING_V2: true
+          LANGCHAIN_PROJECT: !Ref ServiceName
+          LANGCHAIN_API_KEY: !Ref LangSmithApiKey
+          PROMPT_HUB_API_KEY: !Ref PromptHubApiKey
           WORKSPACE_EMAILS: !Ref WorkspaceEmails
           OPENAI_API_KEY: !Ref OpenaiApiKey
           OPENAI_ORG_ID: !Ref OpenaiOrgId
@@ -195,6 +207,10 @@ Resources:
       Timeout: 30
       Environment:
         Variables:
+          LANGCHAIN_TRACING_V2: true
+          LANGCHAIN_PROJECT: !Ref ServiceName
+          LANGCHAIN_API_KEY: !Ref LangSmithApiKey
+          PROMPT_HUB_API_KEY: !Ref PromptHubApiKey
           OPENAI_API_KEY: !Ref OpenaiApiKey
           OPENAI_ORG_ID: !Ref OpenaiOrgId
           GOOGLE_SITE_VERIFICATION: !Ref GoogleSiteVerification

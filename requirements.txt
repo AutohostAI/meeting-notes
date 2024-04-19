@@ -4,5 +4,8 @@ google-auth-oauthlib==1.0.0
 PyDrive==1.3.1
 requests==2.30.0
 boto3==1.26.137
-tiktoken==0.4.0
-openai==1.13.3
+tiktoken==0.6.0
+langchain==0.1.16
+langchain-core==0.1.44
+langchain-community==0.0.33
+langchain-openai==0.1.3

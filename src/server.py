@@ -14,17 +14,16 @@ This handler is invoked by:
 import os
 import json
 import traceback
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from urllib.parse import unquote_plus
 from libs.s3 import upload_to_s3, get_from_s3
 from libs.email import send_email
 from libs.llm import condense_transcript, summarize_long_text_in_chunks
 from libs.gdrive import get_drive_change_event, renew_drive_webhook_subscriptions, export_text, get_file_emails
 from libs.sqs import queue_message
-
-
-# Create an instance of the OpenAI class
-client = OpenAI()
+from libs.prompt_hub import get_prompt
 
 
 HTML = f"""<HTML>
@@ -223,7 +222,12 @@ def process_event_for_participant(event: dict, participant_email: str):
 
         # Create the system prompt
         system = """You are a meeting assistant. You are given summaries of a meeting transcript and you need to combine and summarize all of them in 1-2 paragraphs.
-This transcript was computer generated and might contain errors.
+
+The following transcript was computer-generated and might contain errors:
+
+<transcript>
+{transcript}
+</transcript>
 
 Use the following format for your response:
 
@@ -235,19 +239,14 @@ Key Decisions:
 
 Next Steps:
 [Next steps for the meeting participants using 1-10 bullet points]"""
+        system_prompt = get_prompt("meeting-summary-agent")
 
-        # Make the API call to OpenAI
-        summary_response = client.chat.completions.create(
-            model="gpt-4-turbo-preview",
-            temperature=0,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": super_summary},
-            ]
-        )
+        prompt = ChatPromptTemplate.from_template(system_prompt if system_prompt != "" else system)
+        model = ChatOpenAI(model="gpt-4-turbo", max_tokens=4000)
+        output_parser = StrOutputParser()
+        chain = prompt | model | output_parser
 
-        summary = summary_response.choices[0].message.content
-        # print(summary)
+        summary = chain.invoke({"transcript": super_summary})
 
         # Save the summary to S3
         upload_to_s3(file_id, "summary", summary)

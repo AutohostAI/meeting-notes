@@ -1,9 +1,9 @@
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from .tokens import num_tokens_from_string
+from .prompt_hub import get_prompt
 
-
-# Create an instance of the OpenAI class
-client = OpenAI()
 
 
 def condense_transcript(transcript, attendee_list):
@@ -54,20 +54,22 @@ def summarize_text(text: str, max_tokens: int = 4000) -> str:
         "You know how to summarize partial transcripts and maintain the conversational structure and action items.",
         "Always include the speaker's name and a colon before the summary of what was said. Use ONLY one short sentence to summarize each speaker if possible.",
         "Remember to keep the summary short and concise while retaining information about discussion topics, key descisions and action items.",
+        "",
+        "<transcript>",
+        "{transcript}",
+        "</transcript>",
+        ""
+        "Summarize the transcript above.",
     ])
+    system_prompt = get_prompt("meeting-transcript-chunk-summary-agent")
 
-    summary_response = client.chat.completions.create(
-        model="gpt-4-turbo-preview",
-        temperature=0,
-        max_tokens=max_tokens or 2000,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": f'"""{text}"""\n\nSummarize the transcript above.'},
-        ]
-    )
-    summary = summary_response.choices[0].message.content
-    # print(summary)
-    return summary
+    prompt = ChatPromptTemplate.from_template(system_prompt if system_prompt != "" else system)
+    model = ChatOpenAI(model="gpt-4-turbo", max_tokens=max_tokens)
+    output_parser = StrOutputParser()
+    chain = prompt | model | output_parser
+
+    response = chain.invoke({"transcript": text})
+    return response
 
 
 def summarize_lines_in_chunks(lines, chunk_size=20):

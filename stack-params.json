@@ -38,5 +38,13 @@
   {
     "ParameterKey": "WorkspaceEmails",
     "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "LangSmithApiKey",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "PromptHubApiKey",
+    "ParameterValue": ""
   }
 ]
