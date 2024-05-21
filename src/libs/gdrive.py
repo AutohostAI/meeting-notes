@@ -1,5 +1,6 @@
 import os
 import io
+import json
 from datetime import datetime
 from urllib.parse import quote_plus
 from google.oauth2 import service_account
@@ -15,7 +16,7 @@ SCOPES = [
 ]
 
 
-def get_drive_change_event(user_email, change_id):
+def get_drive_change_events(user_email, change_id):
     """
     Gets the change event for a user
 
@@ -40,7 +41,9 @@ def get_drive_change_event(user_email, change_id):
     change_event = service.changes().list(pageToken=page_token).execute()
     # Set default event object
     event = {}
+    events = []
     # Iterate over changes to find a new Google Doc that has '- Transcript' in the title
+    print(f"Processing ChangeID {change_id} containing {len(change_event['changes'])} events for user {user_email}: {json.dumps(change_event)}")
     for change in change_event['changes']:
         if (
                 change['type'] == 'file' and
@@ -55,12 +58,12 @@ def get_drive_change_event(user_email, change_id):
                 "link": f"https://docs.google.com/document/d/{change['file']['id']}/edit?usp=drivesdk",
                 "owner_email": user_email,
             }
-            break
+            events.append(event)
     # Save the page token
     if 'newStartPageToken' in change_event:
         upload_to_s3(f"tokens/{user_email.split('@')[0]}", 'page_token', change_event['newStartPageToken'])
     # Return the event
-    return event
+    return events
 
 
 def renew_drive_webhook_for_user(user_email, webhook_url=None):

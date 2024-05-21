@@ -21,7 +21,7 @@ from urllib.parse import unquote_plus
 from libs.s3 import upload_to_s3, get_from_s3
 from libs.email import send_email
 from libs.llm import condense_transcript, summarize_long_text_in_chunks
-from libs.gdrive import get_drive_change_event, renew_drive_webhook_subscriptions, export_text, get_file_emails
+from libs.gdrive import get_drive_change_events, renew_drive_webhook_subscriptions, export_text, get_file_emails
 from libs.sqs import queue_message
 from libs.prompt_hub import get_prompt
 
@@ -66,11 +66,17 @@ def handler(event, context):
     if 'headers' in event and 'x-goog-resource-uri' in event['headers']:
         page_token = event['headers']['x-goog-resource-uri'].split("pageToken=")[1]
         user_email = unquote_plus(event['headers']['x-goog-channel-token'])
-        event['body'] = get_drive_change_event(user_email, page_token)
-        if 'id' in event['body']:
-            print(f"Received Google Drive webhook for document ID {event['body']['id']} owned by {user_email}")
-        else:
-            print(f"Skipping Google Drive webhook event for user {user_email} because it is not a meeting transcript")
+        events = get_drive_change_events(user_email, page_token)
+        for event_data in events:
+            if 'id' in event_data:
+                print(f"Received Google Drive webhook for document ID {event_data['id']} owned by {user_email}")
+                handle_webhook({"body": event_data, "id": event_data['id']})
+            else:
+                print(f"Skipping Google Drive webhook event for user {user_email} because it is not a meeting transcript: {json.dumps(event_data)}")
+        return {
+            "statusCode": 200,
+            "body": f"Processed Google Drive webhook events for user {user_email}",
+        }
 
     # Convert the body to json if it is a string
     if 'body' in event and isinstance(event["body"], str):
@@ -96,6 +102,8 @@ def handler(event, context):
 
 
 def handle_webhook(event):
+    print(f"Processing event {json.dumps(event)}")
+
     # Convert the body to json if it is a string
     if isinstance(event["body"], str):
         event["body"] = json.loads(event["body"])
