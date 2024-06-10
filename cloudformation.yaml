@@ -204,7 +204,7 @@ Resources:
       ReservedConcurrentExecutions: 15
       Code:
         ImageUri: !Join [ ":", [ !Ref ApiContainerImageUri, !Ref ApiContainerImageTag] ]
-      Timeout: 30
+      Timeout: 180
       Environment:
         Variables:
           LANGCHAIN_TRACING_V2: true

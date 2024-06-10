@@ -30,38 +30,47 @@ def get_drive_change_events(user_email, change_id):
         credentials_path,
         scopes=SCOPES
     )
-    page_token = get_from_s3(f"tokens/{user_email.split('@')[0]}", 'page_token')
-    if page_token is None:
-        page_token = change_id
     # Delegate the credentials
     delegated_credentials = creds.with_subject(user_email)
     # Build the service
     service = build('drive', 'v3', credentials=delegated_credentials)
-    # Get the change event
-    change_event = service.changes().list(pageToken=page_token).execute()
+    # Get the page token
+    page_token = get_from_s3(f"tokens/{user_email.split('@')[0]}", 'page_token')
+    if page_token is None:
+        print(f"Page token not found for user {user_email}, using change_id {change_id}")
+        page_token = change_id
+    if page_token is None:
+        print(f"Page token not found for user {user_email}, getting start page token")
+        response = service.changes().getStartPageToken().execute()
+        page_token = response.get('startPageToken')
     # Set default event object
     event = {}
     events = []
     # Iterate over changes to find a new Google Doc that has '- Transcript' in the title
-    print(f"Processing ChangeID {change_id} containing {len(change_event['changes'])} events for user {user_email}: {json.dumps(change_event)}")
-    for change in change_event['changes']:
-        if (
-                change['type'] == 'file' and
-                'file' in change and
-                change['file']['kind'] == 'drive#file' and
-                '- Transcript' in change['file']['name'] and
-                change['file']['mimeType'] == 'application/vnd.google-apps.document'
-        ):
-            event = {
-                "title": change['file']['name'],
-                "id": change['file']['id'],
-                "link": f"https://docs.google.com/document/d/{change['file']['id']}/edit?usp=drivesdk",
-                "owner_email": user_email,
-            }
-            events.append(event)
-    # Save the page token
-    if 'newStartPageToken' in change_event:
-        upload_to_s3(f"tokens/{user_email.split('@')[0]}", 'page_token', change_event['newStartPageToken'])
+    while page_token is not None:
+        # Get the change event
+        change_event = service.changes().list(pageToken=page_token).execute()
+        print(f"Processing ChangeID {change_id} containing {len(change_event['changes'])} events for user {user_email}: {json.dumps(change_event)}")
+        for change in change_event['changes']:
+            if (
+                    change['type'] == 'file' and
+                    'file' in change and
+                    change['file']['kind'] == 'drive#file' and
+                    '- Transcript' in change['file']['name'] and
+                    change['file']['mimeType'] == 'application/vnd.google-apps.document'
+            ):
+                event = {
+                    "title": change['file']['name'],
+                    "id": change['file']['id'],
+                    "link": f"https://docs.google.com/document/d/{change['file']['id']}/edit?usp=drivesdk",
+                    "owner_email": user_email,
+                }
+                events.append(event)
+        # Save the page token
+        if 'newStartPageToken' in change_event:
+            print(f"Saving new page token for user {user_email}: {change_event['newStartPageToken']}")
+            upload_to_s3(f"tokens/{user_email.split('@')[0]}", 'page_token', change_event['newStartPageToken'])
+        page_token = change_event['nextPageToken'] if 'nextPageToken' in change_event else None
     # Return the event
     return events
 
@@ -90,12 +99,15 @@ def renew_drive_webhook_for_user(user_email, webhook_url=None):
     # Build the service
     service = build('drive', 'v3', credentials=delegated_credentials)
     # Get the page token
-    response = service.changes().getStartPageToken().execute()
+    page_token = get_from_s3(f"tokens/{user_email.split('@')[0]}", 'page_token')
+    if page_token is None:
+        response = service.changes().getStartPageToken().execute()
+        page_token = response.get('startPageToken')
     # Register the webhook
     try:
         unix_milliseconds_hour_from_now = int((datetime.now().timestamp() + 3600) * 1000)
         response = service.changes().watch(
-            pageToken=response.get('startPageToken'),
+            pageToken=page_token,
             body={
                 'id': f'{unix_milliseconds_hour_from_now}-meeting-transcripts-{user_email.split("@")[0].replace(".", "_")}',
                 'type': 'web_hook',
@@ -223,11 +235,7 @@ def get_file_emails(file_id: str, user_email: str) -> list:
     permissions = get_file_permissions(file_id, user_email)
 
     # Extract the email addresses from the permissions list
-    emails = [p['emailAddress'] for p in permissions if p['emailAddress'] != user_email]
-
-    # # Remove `user_email` from the list of emails
-    # if user_email in emails:
-    #     emails.remove(user_email)
+    emails = [p['emailAddress'] for p in permissions if 'emailAddress' in p and p['emailAddress'] != user_email]
 
     # Remove list of emails
     return emails

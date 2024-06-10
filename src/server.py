@@ -219,15 +219,6 @@ def process_event_for_participant(event: dict, participant_email: str):
         text_body = text_lines[5:]
         text_body = condense_transcript(text_body, attendee_list)
 
-        # Try to find cached super summary
-        super_summary = get_from_s3(file_id, "super")
-
-        # If super summary is not cached, create it
-        if super_summary is None:
-            # Save the super summary to S3`
-            super_summary = summarize_long_text_in_chunks(text_body)
-            upload_to_s3(file_id, "super", super_summary)
-
         # Create the system prompt
         system = """You are a meeting assistant. You are given summaries of a meeting transcript and you need to combine and summarize all of them in 1-2 paragraphs.
 
@@ -250,11 +241,11 @@ Next Steps:
         system_prompt = get_prompt("meeting-summary-agent")
 
         prompt = ChatPromptTemplate.from_template(system_prompt if system_prompt != "" else system)
-        model = ChatOpenAI(model="gpt-4-turbo", max_tokens=4000)
+        model = ChatOpenAI(model="gpt-4o", max_tokens=4000)
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
 
-        summary = chain.invoke({"transcript": super_summary})
+        summary = chain.invoke({"transcript": text_body})
 
         # Save the summary to S3
         upload_to_s3(file_id, "summary", summary)

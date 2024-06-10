@@ -64,7 +64,7 @@ def summarize_text(text: str, max_tokens: int = 4000) -> str:
     system_prompt = get_prompt("meeting-transcript-chunk-summary-agent")
 
     prompt = ChatPromptTemplate.from_template(system_prompt if system_prompt != "" else system)
-    model = ChatOpenAI(model="gpt-4-turbo", max_tokens=max_tokens)
+    model = ChatOpenAI(model="gpt-4o", max_tokens=max_tokens)
     output_parser = StrOutputParser()
     chain = prompt | model | output_parser
 
@@ -98,7 +98,7 @@ def summarize_long_text_in_chunks(text):
     # Split the lines into chunks that are less than 13000 tokens
     for line in lines:
         line_tokens = num_tokens_from_string(line, "gpt-3.5-turbo")
-        if tokens + line_tokens > 50000:
+        if tokens + line_tokens > 100000:
             chunks.append("\n".join(chunk_lines))
             chunk_lines = []
             tokens = 0
