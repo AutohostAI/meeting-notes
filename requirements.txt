@@ -9,3 +9,4 @@ langchain==0.1.20
 langchain-core==0.1.52
 langchain-community==0.0.38
 langchain-openai==0.1.7
+urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
