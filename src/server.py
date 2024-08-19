@@ -244,8 +244,11 @@ Next Steps:
         model = ChatOpenAI(model="gpt-4o", max_tokens=4000)
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
-
         summary = chain.invoke({"transcript": text_body})
+
+        # Extract text in <summary> tag
+        if "<summary>" in summary and "</summary>" in summary:
+            summary = summary.split("<summary>")[1].split("</summary>")[0]
 
         # Save the summary to S3
         upload_to_s3(file_id, "summary", summary)
