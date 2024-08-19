@@ -56,7 +56,7 @@ def get_drive_change_events(user_email, change_id):
                     change['type'] == 'file' and
                     'file' in change and
                     change['file']['kind'] == 'drive#file' and
-                    '- Transcript' in change['file']['name'] and
+                    f"{change['file']['name']}".endswith(' Transcript') and
                     change['file']['mimeType'] == 'application/vnd.google-apps.document'
             ):
                 event = {
@@ -66,6 +66,13 @@ def get_drive_change_events(user_email, change_id):
                     "owner_email": user_email,
                 }
                 events.append(event)
+            else:
+                log = {
+                    "type": change['type'],
+                    "file": f"{change['file']['name']}" if 'file' in change else None,
+                    "mimeType": change['file']['mimeType'] if 'file' in change else None,
+                }
+                print(f"Skipping event {json.dumps(log)}")
         # Save the page token
         if 'newStartPageToken' in change_event:
             print(f"Saving new page token for user {user_email}: {change_event['newStartPageToken']}")

@@ -144,18 +144,20 @@ docker build -t meeting-notes . && docker run -p 9000:8080 --env-file=.env --rm 
 
 Open a new terminal window, and use `curl` to test the following endpoints.
 
-Webhook event from Google Drive when a document is created:
+
+Send Google Drive webhook event to the API:
 
 ```bash
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
-  -d '{"body":{"id":"change-me","owner_email":"change-me@example.com","title":"Test - Transcript"}}'
+  -d '{"headers":{"x-goog-resource-uri":"https://www.googleapis.com/drive/v3/changes?alt=json&pageToken=511460",
+    "x-goog-channel-token":"roy%40autohost.ai"}}'
 ```
 
 SQS event for worker to summarize the meeting transcript:
 
 ```bash
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
-  -d '{"Records":[{"messageId":"1JlgPkv5j_N9ul39dWRV-cVcVPIB-lfUK9OcKMALhxgg","body":"{\"title\":\"Example Meeting (2023-05-26 12:38 GMT-4) - Transcript\",\"id\":\"1JlgPkv5j_N9ul39dWRV-cVcVPIB-lfUK9OcKMALhxgg\",\"link\":\"https://docs.google.com/document/d/change-me/edit?usp=drivesdk\",\"owner_email\":\"roy@autohost.ai\"}","attributes":{"ApproximateReceiveCount":"1","AWSTraceHeader":"Root=1-6470f9b0-xxxx;Parent=xxxx;Sampled=0;Lineage=85108a56:0","SentTimestamp":"1685125554295","SenderId":"change-me:meeting-notes-prod-api","ApproximateFirstReceiveTimestamp":"1685125554296"},"messageAttributes":{},"md5OfBody":"11268099d001110f04757778362ddb11","eventSource":"aws:sqs","eventSourceARN":"arn:aws:sqs:us-east-1:change-me:meeting-notes-prod-prod-queue","awsRegion":"us-east-1"}]}'
+  -d '{"Records":[{"messageId":"1JlgPkv5j_N9ul39dWRV-cVcVPIB-lfUK9OcKMALhxgg","body":"{\"title\":\"Roy / Nam (2024-08-16 14:33 GMT-4) – Transcript\",\"id\":\"1dyoTC5HG4Sfc75jSfeFUU-Rq52XuOnz5aief_mfzirQ\",\"link\":\"https://docs.google.com/document/d/1dyoTC5HG4Sfc75jSfeFUU-Rq52XuOnz5aief_mfzirQ/edit?usp=drivesdk\",\"owner_email\":\"roy@autohost.ai\"}","attributes":{"ApproximateReceiveCount":"1","AWSTraceHeader":"Root=1-6470f9b0-xxxx;Parent=xxxx;Sampled=0;Lineage=85108a56:0","SentTimestamp":"1685125554295","SenderId":"change-me:meeting-notes-prod-api","ApproximateFirstReceiveTimestamp":"1685125554296"},"messageAttributes":{},"md5OfBody":"11268099d001110f04757778362ddb11","eventSource":"aws:sqs","eventSourceARN":"arn:aws:sqs:us-east-1:change-me:meeting-notes-prod-prod-queue","awsRegion":"us-east-1"}]}'
 ```
 
 ## Demo

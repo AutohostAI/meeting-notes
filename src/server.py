@@ -109,7 +109,7 @@ def handle_webhook(event):
         event["body"] = json.loads(event["body"])
 
     # Check if 'Transcript' is in the `title` attribute of the body
-    if "title" not in event["body"] or "- Transcript" not in event["body"]["title"]:
+    if "title" not in event["body"] or not f'{event["body"]["title"]}'.endswith(" Transcript"):
         print(f"Skipping document ID {event['body']['id']} because it is not a transcript")
         return {
             "statusCode": 201,
