@@ -19,6 +19,10 @@ Parameters:
       Description: API container image tag
       Type: String
       Default: latest
+    AnthropicApiKey:
+      Description: Anthropic API Key
+      Type: String
+      NoEcho: true
     OpenaiApiKey:
       Description: OpenAI API Key
       Type: String
@@ -172,6 +176,7 @@ Resources:
           LANGCHAIN_API_KEY: !Ref LangSmithApiKey
           PROMPT_HUB_API_KEY: !Ref PromptHubApiKey
           WORKSPACE_EMAILS: !Ref WorkspaceEmails
+          ANTHROPIC_API_KEY: !Ref AnthropicApiKey
           OPENAI_API_KEY: !Ref OpenaiApiKey
           OPENAI_ORG_ID: !Ref OpenaiOrgId
           MAILGUN_API_KEY: !Ref MailgunApiKey
@@ -211,6 +216,7 @@ Resources:
           LANGCHAIN_PROJECT: !Ref ServiceName
           LANGCHAIN_API_KEY: !Ref LangSmithApiKey
           PROMPT_HUB_API_KEY: !Ref PromptHubApiKey
+          ANTHROPIC_API_KEY: !Ref AnthropicApiKey
           OPENAI_API_KEY: !Ref OpenaiApiKey
           OPENAI_ORG_ID: !Ref OpenaiOrgId
           GOOGLE_SITE_VERIFICATION: !Ref GoogleSiteVerification

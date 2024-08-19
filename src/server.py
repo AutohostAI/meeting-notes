@@ -14,13 +14,13 @@ This handler is invoked by:
 import os
 import json
 import traceback
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from urllib.parse import unquote_plus
 from libs.s3 import upload_to_s3, get_from_s3
 from libs.email import send_email
-from libs.llm import condense_transcript, summarize_long_text_in_chunks
+from libs.llm import condense_transcript
 from libs.gdrive import get_drive_change_events, renew_drive_webhook_subscriptions, export_text, get_file_emails
 from libs.sqs import queue_message
 from libs.prompt_hub import get_prompt
@@ -241,7 +241,7 @@ Next Steps:
         system_prompt = get_prompt("meeting-summary-agent")
 
         prompt = ChatPromptTemplate.from_template(system_prompt if system_prompt != "" else system)
-        model = ChatOpenAI(model="gpt-4o", max_tokens=4000)
+        model = ChatAnthropic(model="claude-3-5-sonnet-20240620", max_tokens=4000)
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
         summary = chain.invoke({"transcript": text_body})
