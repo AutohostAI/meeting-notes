@@ -14,7 +14,7 @@ def send_email(to, subject, message):
     """
     html_body = markdown.markdown(message)
     data = {
-        "from": f"Meeting Notes <no-reply@{os.environ.get('MAILGUN_DOMAIN', '')}>",
+        "from": f"Meeting Notes <meeting-notes@{os.environ.get('MAILGUN_DOMAIN', '')}>",
         "to": to,
         "subject": subject,
         "text": message,
