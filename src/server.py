@@ -241,7 +241,7 @@ Next Steps:
         system_prompt = get_prompt("meeting-summary-agent")
 
         prompt = ChatPromptTemplate.from_template(system_prompt if system_prompt != "" else system)
-        model = ChatAnthropic(model="claude-3-5-sonnet-20240620", max_tokens=4000)
+        model = ChatAnthropic(model="claude-3-7-sonnet-latest", max_tokens=8000, temperature=0.5)
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
         summary = chain.invoke({"transcript": text_body})
@@ -264,7 +264,7 @@ Next Steps:
         event["body"].get("link", ""),
         "",
         "---",
-        "Sent by Meeting Notes AI 🤖"
+        "Sent by Autohost Sales AI ✨"
     ])
     send_email(
         participant_email,
