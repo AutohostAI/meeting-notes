@@ -109,7 +109,7 @@ def handle_webhook(event):
         event["body"] = json.loads(event["body"])
 
     # Check if 'Transcript' is in the `title` attribute of the body
-    if "title" not in event["body"] or not f'{event["body"]["title"]}'.endswith(" Transcript"):
+    if "title" not in event["body"] or " Transcript" not in f'{event["body"]["title"]}':
         print(f"Skipping document ID {event['body']['id']} because it is not a transcript")
         return {
             "statusCode": 201,
@@ -241,7 +241,7 @@ Next Steps:
         system_prompt = get_prompt("meeting-summary-agent")
 
         prompt = ChatPromptTemplate.from_template(system_prompt if system_prompt != "" else system)
-        model = ChatAnthropic(model="claude-3-7-sonnet-latest", max_tokens=8000, temperature=0.5)
+        model = ChatAnthropic(model="claude-sonnet-4-0", max_tokens=10000, temperature=0.5)
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
         summary = chain.invoke({"transcript": text_body})
