@@ -241,7 +241,7 @@ Next Steps:
         system_prompt = get_prompt("meeting-summary-agent")
 
         prompt = ChatPromptTemplate.from_template(system_prompt if system_prompt != "" else system)
-        model = ChatAnthropic(model="claude-sonnet-4-0", max_tokens=10000, temperature=0.5)
+        model = ChatAnthropic(model="claude-sonnet-4-5", max_tokens=10000, temperature=0.4)
         output_parser = StrOutputParser()
         chain = prompt | model | output_parser
         summary = chain.invoke({"transcript": text_body})

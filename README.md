@@ -57,7 +57,7 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 Build the Docker image:
 
 ```bash
-docker build -t meeting-notes .
+docker build --provenance=false -t meeting-notes .
 ```
 
 Tag the image:

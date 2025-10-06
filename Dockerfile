@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.9
+FROM public.ecr.aws/lambda/python:3.13
 
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .

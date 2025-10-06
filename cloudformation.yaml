@@ -91,6 +91,29 @@ Resources:
           Value: !Ref ServiceName
         - Key: Environment
           Value: !Ref StageName
+
+  # CloudWatch Log Groups for Lambda Functions
+  WorkerLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-worker
+      RetentionInDays: 14
+      Tags:
+        - Key: service
+          Value: !Ref ServiceName
+        - Key: Environment
+          Value: !Ref StageName
+
+  ApiLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-api
+      RetentionInDays: 14
+      Tags:
+        - Key: service
+          Value: !Ref ServiceName
+        - Key: Environment
+          Value: !Ref StageName
   
   # Lambda Role
   LambdaExecutionRole:
@@ -113,23 +136,33 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
+              # CloudWatch Logs permissions for Lambda execution
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !GetAtt WorkerLambdaLogGroup.Arn
+                  - !GetAtt ApiLambdaLogGroup.Arn
+              # ECR permissions for pulling container images
               - Effect: Allow
                 Resource: "*"
                 Action:
-                  - logs:CreateLogStream
-                  - logs:CreateLogGroup
-                  - logs:PutLogEvents
-                  - logs:DescribeLogStreams
                   - ecr:GetDownloadUrlForLayer
                   - ecr:GetAuthorizationToken
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetRepositoryPolicy
                   - ecr:BatchGetImage
+              # VPC permissions (if needed for future use)
+              - Effect: Allow
+                Resource: "*"
+                Action:
                   - ec2:DescribeNetworkInterfaces
                   - ec2:CreateNetworkInterface
                   - ec2:DeleteNetworkInterface
                   - ec2:DescribeInstances
                   - ec2:AttachNetworkInterface
+              # S3 permissions for meeting notes storage
               - Effect: Allow
                 Resource:
                   - !Sub arn:aws:s3:::${S3Bucket}/datalake/meeting-notes/*
@@ -137,12 +170,14 @@ Resources:
                   - s3:PutObject
                   - s3:GetObject
                   - s3:DeleteObject
+              # Lambda invocation permissions
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
                 Resource:
                   - !Sub arn:aws:lambda:*:*:function:${AWS::StackName}-api
                   - !Sub arn:aws:lambda:*:*:function:${AWS::StackName}-worker
+              # SQS permissions
               - Effect: Allow
                 Action:
                   - sqs:*
@@ -154,6 +189,7 @@ Resources:
     Type: AWS::Lambda::Function
     DependsOn:
       - LambdaExecutionRole
+      - WorkerLambdaLogGroup
     Properties:
       Description: Worker for Autohost Meeting Notes
       FunctionName: !Sub ${AWS::StackName}-worker
@@ -195,6 +231,7 @@ Resources:
     Type: AWS::Lambda::Function
     DependsOn:
       - LambdaExecutionRole
+      - ApiLambdaLogGroup
     Properties:
       Description: API backend for Autohost Meeting Notes
       FunctionName: !Sub ${AWS::StackName}-api
